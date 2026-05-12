@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel Admin - Florería Jinni</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-pink-50 min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white p-8 rounded-[2rem] shadow-xl border-2 border-pink-100 w-full max-w-md">
+        <h2 class="text-3xl font-bold text-pink-600 mb-6 text-center">Plantar Flor ✨</h2>
+        
+        <div class="space-y-4">
+            <input type="text" id="nombre" placeholder="Nombre (ej: Girasol de Kat)" class="w-full p-3 border-2 border-pink-50 rounded-2xl outline-pink-400">
+            
+            <select id="icono" class="w-full p-3 border-2 border-pink-50 rounded-2xl outline-pink-400 bg-white">
+                <option value="flower-2">Tulipán 🌷</option>
+                <option value="sun">Girasol 🌻</option>
+                <option value="flower">Flor Clásica 🌸</option>
+                <option value="tent-tree">Rosa 🌹</option>
+            </select>
+
+            <div class="flex items-center gap-4 bg-pink-50 p-3 rounded-2xl">
+                <label class="text-sm font-bold text-pink-700">Color:</label>
+                <input type="color" id="color" value="#f06292" class="h-10 w-full rounded-lg cursor-pointer">
+            </div>
+
+            <button onclick="plantar()" class="w-full bg-pink-500 text-white py-4 rounded-2xl font-bold shadow-lg hover:bg-pink-600 transition-all active:scale-95">
+                Enviar al jardín de Kat 🚀
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // PEGA TUS DATOS AQUÍ
+        const supabaseUrl = 'TU_URL_DE_SUPABASE'; 
+        const supabaseKey = 'TU_PUBLISHABLE_KEY_DE_SUPABASE';
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+        async function plantar() {
+            const nombre = document.getElementById('nombre').value;
+            const icono = document.getElementById('icono').value;
+            const color = document.getElementById('color').value;
+
+            if(!nombre) return alert("Ponle un nombre a la flor");
+
+            const { error } = await supabaseClient.from('jardin').insert([
+                { nombre_flor: nombre, icono: icono, color: color, nivel: 1, ultimo_riego: 0 }
+            ]);
+
+            if (error) {
+                console.error(error);
+                alert("Error al plantar. Revisa si creaste la tabla en Supabase.");
+            } else {
+                alert("¡Flor enviada con éxito! 🌸");
+                document.getElementById('nombre').value = '';
+            }
+        }
+    </script>
+</body>
+</html>
