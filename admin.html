@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Admin - Florería Jinni</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -11,7 +12,7 @@
         <h2 class="text-3xl font-bold text-pink-600 mb-6 text-center">Plantar Flor ✨</h2>
         
         <div class="space-y-4">
-            <input type="text" id="nombre" placeholder="Nombre (ej: Girasol de Kat)" class="w-full p-3 border-2 border-pink-50 rounded-2xl outline-pink-400">
+            <input type="text" id="nombre" placeholder="Nombre (ej: Lirio para Kat)" class="w-full p-3 border-2 border-pink-50 rounded-2xl outline-pink-400">
             
             <select id="icono" class="w-full p-3 border-2 border-pink-50 rounded-2xl outline-pink-400 bg-white">
                 <option value="flower-2">Tulipán 🌷</option>
@@ -33,28 +34,36 @@
     </div>
 
     <script>
-        // PEGA TUS DATOS AQUÍ
-const supabaseUrl = 'https://bleuixyaaqkdltywqkrm.supabase.co';
-const supabaseKey = 'sb_publishable_axaQYh1UizlxyLN35niObA_F78gCwoB';
+        // Configuración limpia
+        const supabaseUrl = 'https://bleuixyaaqkdltywqkrm.supabase.co'.trim();
+        const supabaseKey = 'sb_publishable_axaQYh1UizlxyLN35niObA_F78gCwoB'.trim();
         const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
         async function plantar() {
-            const nombre = document.getElementById('nombre').value;
+            const nombreInput = document.getElementById('nombre');
             const icono = document.getElementById('icono').value;
             const color = document.getElementById('color').value;
+            const nombre = nombreInput.value.trim();
 
-            if(!nombre) return alert("Ponle un nombre a la flor");
+            if(!nombre) return alert("Ponle un nombre a la flor, Jinni 🌸");
 
+            // Insertar en la tabla 'jardin'
             const { error } = await supabaseClient.from('jardin').insert([
-                { nombre_flor: nombre, icono: icono, color: color, nivel: 1, ultimo_riego: 0 }
+                { 
+                    nombre_flor: nombre, 
+                    icono: icono, 
+                    color: color, 
+                    nivel: 1, 
+                    ultimo_riego: Date.now() // Usamos el tiempo actual para el primer riego
+                }
             ]);
 
             if (error) {
-                console.error(error);
-                alert("Error al plantar. Revisa si creaste la tabla en Supabase.");
+                console.error("Error completo:", error);
+                alert("Error al conectar: " + error.message);
             } else {
-                alert("¡Flor enviada con éxito! 🌸");
-                document.getElementById('nombre').value = '';
+                alert("¡Flor enviada con éxito! Kat ya puede verla 🌸");
+                nombreInput.value = '';
             }
         }
     </script>
