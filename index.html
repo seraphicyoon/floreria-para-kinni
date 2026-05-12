@@ -17,6 +17,9 @@
         .font-floral { font-family: 'Dancing Script', cursive; }
         .flower-bounce { animation: bounce 2s infinite; }
         @keyframes bounce { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-10px) scale(1.05); } }
+        /* Estilo para que el scroll de las cartas sea suave */
+        #contenedor-cartas::-webkit-scrollbar { width: 6px; }
+        #contenedor-cartas::-webkit-scrollbar-thumb { background: #fbcfe8; border-radius: 10px; }
     </style>
 </head>
 <body class="flex flex-col items-center p-6 text-[#880e4f]">
@@ -26,12 +29,31 @@
         <p class="text-sm italic opacity-70">"Nuestro jardín compartido" ✨</p>
     </header>
 
+    <!-- SECCIÓN DEL JARDÍN -->
     <div id="jardin" class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10 w-full max-w-2xl">
         <p class="text-center col-span-full opacity-50 p-10">Cargando las flores que Jinni plantó... 🌸</p>
     </div>
 
+    <!-- SECCIÓN DE LAS CARTAS -->
+    <div class="max-w-2xl w-full mt-10 p-6 bg-white/80 backdrop-blur-md rounded-[2rem] shadow-xl border-t-4 border-pink-400">
+        <h2 class="font-floral text-4xl text-center mb-4 text-[#ad1457]">Cartas de Amor 💌</h2>
+        
+        <div id="contenedor-cartas" class="flex flex-col space-y-4 max-h-60 overflow-y-auto mb-6 p-2">
+            <p class="text-center opacity-50 text-sm">Abriendo el buzón... 📮</p>
+        </div>
+
+        <div class="flex gap-2">
+            <input type="text" id="respuesta-kat" placeholder="Escribe tu respuesta aquí, amor..." 
+                   class="flex-1 p-3 rounded-2xl border-2 border-pink-100 outline-pink-400 text-sm">
+            <button onclick="enviarRespuesta()" 
+                    class="bg-pink-500 text-white px-6 py-2 rounded-2xl font-bold hover:bg-pink-600 transition-all shadow-md active:scale-95">
+                Enviar
+            </button>
+        </div>
+    </div>
+
     <script>
-        // --- CONFIGURACIÓN LIMPIA ---
+        // --- CONFIGURACIÓN ---
         const urlWebhook = "https://canary.discord.com/api/webhooks/1503544004778659940/23r_AuAZiGuyR6U_pRtVem7N1BpxbOmpFsOPKaXxxT9fQ7Lgaq72pcjXG7q8zR0LS38P";
         const supabaseUrl = 'https://bleuixyaaqkdltywqkrm.supabase.co'.trim();
         const supabaseKey = 'sb_publishable_axaQYh1UizlxyLN35niObA_F78gCwoB'.trim();
@@ -43,11 +65,12 @@
             localStorage.setItem('limpieza_v1', 'true');
         }
 
+        // --- LÓGICA DE LAS FLORES ---
         async function cargarFlores() {
             const { data, error } = await supabaseClient
                 .from('jardin')
                 .select('*')
-                .order('id', { ascending: true }); // Ordenamos por ID para que no se muevan de lugar
+                .order('id', { ascending: true });
 
             const container = document.getElementById('jardin');
             
@@ -119,8 +142,62 @@
             return `${h}h ${m}m`;
         }
 
+        // --- LÓGICA DE LAS CARTAS ---
+        async function cargarCartas() {
+            const { data, error } = await supabaseClient
+                .from('cartas')
+                .select('*')
+                .order('created_at', { ascending: true });
+
+            const container = document.getElementById('contenedor-cartas');
+            if (error || !data) {
+                console.error("Error al cargar cartas:", error);
+                return;
+            }
+
+            if (data.length === 0) {
+                container.innerHTML = `<p class="text-center opacity-50 text-xs">Aún no hay cartas guardadas... 📝</p>`;
+                return;
+            }
+
+            container.innerHTML = data.map(c => `
+                <div class="p-3 rounded-2xl max-w-[80%] ${c.remitente === 'Jinni' 
+                    ? 'bg-pink-100 self-start border-l-4 border-pink-300' 
+                    : 'bg-purple-100 self-end text-right border-r-4 border-purple-300'}">
+                    <p class="text-[9px] font-bold uppercase opacity-60 tracking-widest">${c.remitente}</p>
+                    <p class="text-sm text-[#4a148c]">${c.contenido}</p>
+                </div>
+            `).join('');
+            
+            // Auto-scroll al final para ver el último mensaje
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function enviarRespuesta() {
+            const input = document.getElementById('respuesta-kat');
+            const mensaje = input.value.trim();
+            if (!mensaje) return;
+
+            // Al enviar desde la página principal, el remitente es Kat
+            const { error } = await supabaseClient
+                .from('cartas')
+                .insert([{ remitente: 'Kat', contenido: mensaje }]);
+
+            if (!error) {
+                input.value = '';
+                cargarCartas();
+            } else {
+                alert("No se pudo enviar la carta: " + error.message);
+            }
+        }
+
+        // --- INICIO Y REFRESCO ---
         cargarFlores();
+        cargarCartas();
+        
+        // Actualizamos flores cada minuto y cartas cada 10 segundos
         setInterval(cargarFlores, 60000);
+        setInterval(cargarCartas, 10000);
     </script>
 </body>
 </html>
