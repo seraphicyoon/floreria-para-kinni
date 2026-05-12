@@ -17,7 +17,6 @@
         .font-floral { font-family: 'Dancing Script', cursive; }
         .flower-bounce { animation: bounce 2s infinite; }
         @keyframes bounce { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-10px) scale(1.05); } }
-        /* Estilo para que el scroll de las cartas sea suave */
         #contenedor-cartas::-webkit-scrollbar { width: 6px; }
         #contenedor-cartas::-webkit-scrollbar-thumb { background: #fbcfe8; border-radius: 10px; }
     </style>
@@ -29,12 +28,10 @@
         <p class="text-sm italic opacity-70">"Nuestro jardín compartido" ✨</p>
     </header>
 
-    <!-- SECCIÓN DEL JARDÍN -->
     <div id="jardin" class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10 w-full max-w-2xl">
-        <p class="text-center col-span-full opacity-50 p-10">Cargando las flores que Jinni plantó... 🌸</p>
+        <p class="text-center col-span-full opacity-50 p-10">Cargando las flores de Jinni... 🌸</p>
     </div>
 
-    <!-- SECCIÓN DE LAS CARTAS -->
     <div class="max-w-2xl w-full mt-10 p-6 bg-white/80 backdrop-blur-md rounded-[2rem] shadow-xl border-t-4 border-pink-400">
         <h2 class="font-floral text-4xl text-center mb-4 text-[#ad1457]">Cartas de Amor 💌</h2>
         
@@ -53,55 +50,32 @@
     </div>
 
     <script>
-        // --- CONFIGURACIÓN ---
         const urlWebhook = "https://canary.discord.com/api/webhooks/1503544004778659940/23r_AuAZiGuyR6U_pRtVem7N1BpxbOmpFsOPKaXxxT9fQ7Lgaq72pcjXG7q8zR0LS38P";
         const supabaseUrl = 'https://bleuixyaaqkdltywqkrm.supabase.co'.trim();
         const supabaseKey = 'sb_publishable_axaQYh1UizlxyLN35niObA_F78gCwoB'.trim();
         const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // LIMPIEZA AUTOMÁTICA
-        if (!localStorage.getItem('limpieza_v1')) {
-            localStorage.clear();
-            localStorage.setItem('limpieza_v1', 'true');
-        }
-
-        // --- LÓGICA DE LAS FLORES ---
         async function cargarFlores() {
-            const { data, error } = await supabaseClient
-                .from('jardin')
-                .select('*')
-                .order('id', { ascending: true });
-
+            const { data, error } = await supabaseClient.from('jardin').select('*').order('id', { ascending: true });
             const container = document.getElementById('jardin');
-            
-            if (error) {
-                console.error("Error de Supabase:", error);
-                container.innerHTML = `<p class="text-center col-span-full text-red-400">Error al conectar: ${error.message}</p>`;
-                return;
-            }
-
+            if (error) return;
             if (!data || data.length === 0) {
-                container.innerHTML = `<p class="text-center col-span-full opacity-50 p-10 bg-white/30 rounded-3xl border-2 border-dashed border-pink-200">El jardín está vacío... <br> ¡Jinni aún no ha plantado nada hoy! 🥀</p>`;
+                container.innerHTML = `<p class="text-center col-span-full opacity-50 p-10 bg-white/30 rounded-3xl border-2 border-dashed border-pink-200">El jardín está vacío... 🥀</p>`;
                 return;
             }
-
             container.innerHTML = '';
             const ahora = Date.now();
-
             data.forEach(f => {
                 const tiempoRestante = Math.max(0, (Number(f.ultimo_riego) + 86400000) - ahora);
                 const puedeRegar = tiempoRestante === 0;
-                
                 let visualHTML = f.nivel === 1 
                     ? `<i data-lucide="sprout" style="stroke: #66bb6a; width:80px; height:80px;"></i>`
                     : `<i data-lucide="${f.icono}" class="${puedeRegar ? 'flower-bounce' : ''}" style="stroke: ${f.color}; fill: ${f.color}20; width:80px; height:80px;"></i>`;
-
                 container.innerHTML += `
                     <div class="bg-white/90 backdrop-blur-sm p-6 rounded-[2rem] shadow-lg border-b-4 border-pink-200 text-center flex flex-col items-center">
                         <div class="mb-4 h-20 flex items-center justify-center">${visualHTML}</div>
                         <h3 class="font-floral text-3xl mb-1" style="color: ${f.color}">${f.nombre_flor}</h3>
                         <p class="text-[10px] uppercase tracking-tighter text-pink-300 mb-4 font-bold">Nivel de Amor: ${f.nivel}</p>
-                        
                         ${puedeRegar ? 
                             `<button onclick="regar('${f.id}', '${f.nombre_flor}', ${f.nivel})" class="bg-[#f06292] text-white px-6 py-2 rounded-2xl hover:scale-105 transition-all shadow-md flex items-center gap-2">
                                 <i data-lucide="droplet" class="w-4 h-4"></i> Regar
@@ -117,22 +91,14 @@
         }
 
         async function regar(id, nombre, nivelActual) {
-            const { error } = await supabaseClient
-                .from('jardin')
-                .update({ nivel: nivelActual + 1, ultimo_riego: Date.now() })
-                .eq('id', id);
-
+            const { error } = await supabaseClient.from('jardin').update({ nivel: nivelActual + 1, ultimo_riego: Date.now() }).eq('id', id);
             if (!error) {
                 await fetch(urlWebhook, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        content: `🌸 **Kat** ha regado su **${nombre}** en la florería. \n✨ ¡Ahora es nivel **${nivelActual + 1}**!`
-                    })
+                    body: JSON.stringify({ content: `🌸 **Kat** ha regado su **${nombre}** en la florería. \n✨ ¡Ahora es nivel **${nivelActual + 1}**!` })
                 });
                 cargarFlores();
-            } else {
-                alert("Error al regar: " + error.message);
             }
         }
 
@@ -142,34 +108,32 @@
             return `${h}h ${m}m`;
         }
 
-        // --- LÓGICA DE LAS CARTAS ---
+        // --- LÓGICA DE CARTAS CON FECHA ---
         async function cargarCartas() {
-            const { data, error } = await supabaseClient
-                .from('cartas')
-                .select('*')
-                .order('created_at', { ascending: true });
-
+            const { data, error } = await supabaseClient.from('cartas').select('*').order('created_at', { ascending: true });
             const container = document.getElementById('contenedor-cartas');
-            if (error || !data) {
-                console.error("Error al cargar cartas:", error);
-                return;
-            }
-
+            if (error || !data) return;
             if (data.length === 0) {
-                container.innerHTML = `<p class="text-center opacity-50 text-xs">Aún no hay cartas guardadas... 📝</p>`;
+                container.innerHTML = `<p class="text-center opacity-50 text-xs">Aún no hay cartas... 📝</p>`;
                 return;
             }
 
-            container.innerHTML = data.map(c => `
-                <div class="p-3 rounded-2xl max-w-[80%] ${c.remitente === 'Jinni' 
-                    ? 'bg-pink-100 self-start border-l-4 border-pink-300' 
-                    : 'bg-purple-100 self-end text-right border-r-4 border-purple-300'}">
-                    <p class="text-[9px] font-bold uppercase opacity-60 tracking-widest">${c.remitente}</p>
-                    <p class="text-sm text-[#4a148c]">${c.contenido}</p>
-                </div>
-            `).join('');
-            
-            // Auto-scroll al final para ver el último mensaje
+            container.innerHTML = data.map(c => {
+                const fecha = new Date(c.created_at).toLocaleString('es-ES', { 
+                    day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' 
+                });
+                return `
+                    <div class="p-3 rounded-2xl max-w-[85%] ${c.remitente === 'Jinni' 
+                        ? 'bg-pink-100 self-start border-l-4 border-pink-300' 
+                        : 'bg-purple-100 self-end text-right border-r-4 border-purple-300'}">
+                        <div class="flex justify-between items-center gap-4 mb-1">
+                            <p class="text-[9px] font-bold uppercase opacity-60 tracking-widest">${c.remitente}</p>
+                            <p class="text-[8px] opacity-40 font-semibold">${fecha}</p>
+                        </div>
+                        <p class="text-sm text-[#4a148c] leading-relaxed">${c.contenido}</p>
+                    </div>
+                `;
+            }).join('');
             container.scrollTop = container.scrollHeight;
         }
 
@@ -177,25 +141,15 @@
             const input = document.getElementById('respuesta-kat');
             const mensaje = input.value.trim();
             if (!mensaje) return;
-
-            // Al enviar desde la página principal, el remitente es Kat
-            const { error } = await supabaseClient
-                .from('cartas')
-                .insert([{ remitente: 'Kat', contenido: mensaje }]);
-
+            const { error } = await supabaseClient.from('cartas').insert([{ remitente: 'Kat', contenido: mensaje }]);
             if (!error) {
                 input.value = '';
                 cargarCartas();
-            } else {
-                alert("No se pudo enviar la carta: " + error.message);
             }
         }
 
-        // --- INICIO Y REFRESCO ---
         cargarFlores();
         cargarCartas();
-        
-        // Actualizamos flores cada minuto y cartas cada 10 segundos
         setInterval(cargarFlores, 60000);
         setInterval(cargarCartas, 10000);
     </script>
