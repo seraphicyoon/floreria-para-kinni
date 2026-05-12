@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Florería Jinni & Kat 🌸</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { 
+            font-family: 'Quicksand', sans-serif; 
+            background: linear-gradient(180deg, #fce4ec 0%, #ffebee 100%);
+            min-height: 100vh;
+        }
+        .font-floral { font-family: 'Dancing Script', cursive; }
+        .flower-bounce { animation: bounce 2s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-10px) scale(1.05); } }
+        .flower-icon { width: 80px; height: 80px; stroke-width: 1.5; transition: all 0.3s ease; }
+    </style>
+</head>
+<body class="flex flex-col items-center p-6 text-[#880e4f]">
+
+    <header class="text-center mb-8">
+        <h1 class="text-5xl font-floral mb-2 text-[#ad1457]">Florería Jinni & Kat</h1>
+        <p class="text-sm italic opacity-70">"Cultivando nuestro sueño de tener una florería juntas" ✨</p>
+    </header>
+
+    <div id="jardin" class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10 w-full max-w-2xl">
+        <!-- Espacio para las flores -->
+    </div>
+
+    <!-- Botón para plantar (Puedes borrarlo o comentarlo cuando ya haya suficientes flores) -->
+    <button id="btn-plantar" onclick="agregarFlor()" class="bg-white/50 hover:bg-white text-[#d81b60] border-2 border-[#f48fb1] px-8 py-3 rounded-full transition-all text-sm font-bold shadow-sm flex items-center gap-2">
+        <i data-lucide="sparkles" class="w-4 h-4"></i> Plantar nueva flor para Kat
+    </button>
+
+    <script>
+        const urlWebhook = "https://discord.com/api/webhooks/1503544004778659940/23r_AuAZiGuyR6U_pRtVem7N1BpxbOmpFsOPKaXxxT9fQ7Lgaq72pcjXG7q8zR0LS38P";
+
+        const catalogoFlores = [
+            { nombre: "Tulipán Rosa", icono: "flower-2", color: "#f06292" },
+            { nombre: "Girasol Radiante", icono: "sun", color: "#fbc02d" },
+            { nombre: "Flor de Cerezo", icono: "flower", color: "#f8bbd0" },
+            { nombre: "Rosa de Amor", icono: "tent-tree", color: "#e53935" },
+            { nombre: "Hibisco Dulce", icono: "shrub", color: "#ec407a" }
+        ];
+
+        let flores = JSON.parse(localStorage.getItem('jardin_kat')) || [];
+
+        function renderJardin() {
+            const container = document.getElementById('jardin');
+            container.innerHTML = '';
+            const ahora = Date.now();
+
+            if (flores.length === 0) {
+                container.innerHTML = `<p class="text-center col-span-full opacity-50 p-10 bg-white/30 rounded-3xl border-2 border-dashed border-pink-200">El jardín está vacío... <br> ¡Jinni, planta algo especial! 🌸</p>`;
+            }
+
+            flores.forEach((flor, index) => {
+                const tiempoRestante = Math.max(0, (flor.ultimoRiego + 86400000) - ahora);
+                const puedeRegar = tiempoRestante === 0;
+                
+                let visualHTML = flor.nivel === 1 
+                    ? `<i data-lucide="sprout" class="flower-icon" style="stroke: #66bb6a;"></i>`
+                    : `<i data-lucide="${flor.icono}" class="flower-icon ${puedeRegar ? 'flower-bounce' : ''}" style="stroke: ${flor.color}; fill: ${flor.color}20;"></i>`;
+
+                container.innerHTML += `
+                    <div class="bg-white/90 backdrop-blur-sm p-6 rounded-[2rem] shadow-lg border-b-4 border-pink-200 text-center flex flex-col items-center">
+                        <div class="mb-4 h-20 flex items-center justify-center">${visualHTML}</div>
+                        <h3 class="font-floral text-3xl mb-1" style="color: ${flor.color}">${flor.tipo}</h3>
+                        <p class="text-[10px] uppercase tracking-tighter text-pink-300 mb-4 font-bold">Nivel de Cuidado: ${flor.nivel}</p>
+                        
+                        ${puedeRegar ? 
+                            `<button onclick="regar(${index})" class="bg-[#f06292] text-white px-6 py-2 rounded-2xl hover:scale-105 transition-all shadow-md flex items-center gap-2">
+                                <i data-lucide="droplet" class="w-4 h-4"></i> Regar con amor
+                            </button>` :
+                            `<div class="text-[11px] text-gray-400 bg-gray-50 px-4 py-2 rounded-full flex items-center gap-2">
+                                <i data-lucide="clock" class="w-3 h-3"></i> Vuelve en ${formatearTiempo(tiempoRestante)}
+                            </div>`
+                        }
+                    </div>
+                `;
+            });
+            lucide.createIcons();
+        }
+
+        async function regar(index) {
+            flores[index].nivel += 1;
+            flores[index].ultimoRiego = Date.now();
+            
+            const payload = {
+                embeds: [{
+                    title: "¡Kat regó una flor! 💧",
+                    description: `**Kat** ha cuidado su **${flores[index].tipo}**.\nNivel de amor alcanzado: **${flores[index].nivel}**.\n\n*(Mensaje enviado desde la florería virtual)*`,
+                    color: 16031122,
+                    thumbnail: { url: "https://i.imgur.com/8n9S8fS.png" } // Imagen de ejemplo
+                }]
+            };
+
+            try {
+                await fetch(urlWebhook, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+            } catch (e) { console.error("Error en Discord"); }
+
+            guardarYActualizar();
+        }
+
+        function agregarFlor() {
+            const f = catalogoFlores[Math.floor(Math.random() * catalogoFlores.length)];
+            flores.push({ tipo: f.nombre, icono: f.icono, color: f.color, nivel: 1, ultimoRiego: 0 });
+            guardarYActualizar();
+        }
+
+        function guardarYActualizar() {
+            localStorage.setItem('jardin_kat', JSON.stringify(flores));
+            renderJardin();
+        }
+
+        function formatearTiempo(ms) {
+            let h = Math.floor(ms / 3600000);
+            let m = Math.floor((ms % 3600000) / 60000);
+            return `${h}h ${m}m`;
+        }
+
+        renderJardin();
+        setInterval(renderJardin, 60000);
+    </script>
+</body>
+</html>
