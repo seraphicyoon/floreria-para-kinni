@@ -31,13 +31,13 @@
     </div>
 
     <script>
-        // --- CONFIGURACIÓN ---
+        // --- CONFIGURACIÓN LIMPIA ---
         const urlWebhook = "https://canary.discord.com/api/webhooks/1503544004778659940/23r_AuAZiGuyR6U_pRtVem7N1BpxbOmpFsOPKaXxxT9fQ7Lgaq72pcjXG7q8zR0LS38P";
-const supabaseUrl = 'https://bleuixyaaqkdltywqkrm.supabase.co';
-const supabaseKey = 'sb_publishable_axaQYh1UizlxyLN35niObA_F78gCwoB';
+        const supabaseUrl = 'https://bleuixyaaqkdltywqkrm.supabase.co'.trim();
+        const supabaseKey = 'sb_publishable_axaQYh1UizlxyLN35niObA_F78gCwoB'.trim();
         const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // LIMPIEZA AUTOMÁTICA: Borra rastros de versiones anteriores
+        // LIMPIEZA AUTOMÁTICA
         if (!localStorage.getItem('limpieza_v1')) {
             localStorage.clear();
             localStorage.setItem('limpieza_v1', 'true');
@@ -47,12 +47,13 @@ const supabaseKey = 'sb_publishable_axaQYh1UizlxyLN35niObA_F78gCwoB';
             const { data, error } = await supabaseClient
                 .from('jardin')
                 .select('*')
-                .order('created_at', { ascending: true });
+                .order('id', { ascending: true }); // Ordenamos por ID para que no se muevan de lugar
 
             const container = document.getElementById('jardin');
             
             if (error) {
-                container.innerHTML = `<p class="text-center col-span-full text-red-400">Error al conectar con la florería :(</p>`;
+                console.error("Error de Supabase:", error);
+                container.innerHTML = `<p class="text-center col-span-full text-red-400">Error al conectar: ${error.message}</p>`;
                 return;
             }
 
@@ -65,7 +66,6 @@ const supabaseKey = 'sb_publishable_axaQYh1UizlxyLN35niObA_F78gCwoB';
             const ahora = Date.now();
 
             data.forEach(f => {
-                // Lógica de 24 horas: 86,400,000 ms
                 const tiempoRestante = Math.max(0, (Number(f.ultimo_riego) + 86400000) - ahora);
                 const puedeRegar = tiempoRestante === 0;
                 
@@ -100,7 +100,6 @@ const supabaseKey = 'sb_publishable_axaQYh1UizlxyLN35niObA_F78gCwoB';
                 .eq('id', id);
 
             if (!error) {
-                // Aviso a Discord
                 await fetch(urlWebhook, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -109,6 +108,8 @@ const supabaseKey = 'sb_publishable_axaQYh1UizlxyLN35niObA_F78gCwoB';
                     })
                 });
                 cargarFlores();
+            } else {
+                alert("Error al regar: " + error.message);
             }
         }
 
@@ -118,7 +119,6 @@ const supabaseKey = 'sb_publishable_axaQYh1UizlxyLN35niObA_F78gCwoB';
             return `${h}h ${m}m`;
         }
 
-        // Carga inicial y actualización cada minuto
         cargarFlores();
         setInterval(cargarFlores, 60000);
     </script>
