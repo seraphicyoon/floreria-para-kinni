@@ -10,112 +10,163 @@
     <style>
         body { 
             font-family: 'Quicksand', sans-serif; 
-            background: linear-gradient(180deg, #fff1f2 0%, #ffe4e6 100%);
+            background: linear-gradient(180deg, #fce4ec 0%, #ffebee 100%);
             min-height: 100vh;
         }
-        /* Estilo lindo para el scroll del cuadro de texto */
-        textarea::-webkit-scrollbar { width: 6px; }
+        /* Scroll bonito para los cuadros de texto */
+        textarea::-webkit-scrollbar { width: 4px; }
         textarea::-webkit-scrollbar-thumb { background: #fda4af; border-radius: 10px; }
     </style>
 </head>
-<body class="flex flex-col items-center p-6 text-[#9f1239]">
+<body class="flex flex-col items-center p-4 sm:p-6 text-[#880e4f]">
 
-    <div class="w-full max-w-xl flex justify-start mb-4">
-        <a href="index.html" class="flex items-center gap-1.5 text-xs font-bold opacity-60 hover:opacity-100 transition-all bg-white/50 px-3 py-1.5 rounded-full border border-rose-200">
+    <div class="w-full max-w-5xl flex justify-start mb-4">
+        <a href="index.html" class="flex items-center gap-1.5 text-xs font-bold opacity-60 hover:opacity-100 transition-all bg-white/60 px-3 py-1.5 rounded-full border border-pink-200 shadow-sm">
             <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Volver al Jardín
         </a>
     </div>
 
-    <main class="w-full max-w-xl bg-white/70 backdrop-blur-md p-6 rounded-[2.5rem] shadow-xl border border-rose-200/60 flex flex-col gap-4">
+    <main class="w-full max-w-5xl flex flex-col gap-6">
         
-        <header class="text-center mb-2">
+        <header class="text-center bg-white/60 backdrop-blur-md p-6 rounded-[2rem] border border-pink-200/60 shadow-sm relative overflow-hidden">
             <div class="flex items-center justify-center gap-2 mb-1">
-                <span class="text-2xl">🫧</span>
-                <h1 class="text-2xl font-bold text-[#9f1239]">Bloc de Notas & Copiado</h1>
+                <span class="text-2xl animate-bounce">🫧</span>
+                <h1 class="text-3xl font-bold text-[#ad1457]">Mis Bloques de Notas</h1>
                 <span class="text-2xl">📝</span>
             </div>
-            <p class="text-[11px] opacity-60 font-medium">Tu texto se guarda automáticamente en este navegador</p>
+            <p class="text-xs opacity-70 font-medium">Crea, edita y copia todos los cuadros independientes que necesites</p>
+            
+            <div class="mt-4 flex flex-col sm:flex-row gap-2 max-w-lg mx-auto">
+                <input type="text" id="nuevo-titulo" placeholder="Título del bloque (ej: Códigos, Cuentas...)" 
+                    class="flex-1 px-4 py-2 rounded-xl border border-pink-200 outline-none focus:border-pink-400 text-sm font-medium bg-white/90">
+                <button onclick="crearBloque()" 
+                    class="bg-[#f06292] text-white px-5 py-2 rounded-xl font-bold text-sm hover:bg-[#ec407a] transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Crear Bloque
+                </button>
+            </div>
         </header>
 
-        <div class="relative w-full">
-            <textarea id="caja-texto" rows="10" placeholder="Escribe o pega aquí lo que necesites tener a la mano, Jinni..."
-                class="w-full p-4 rounded-3xl border-2 border-rose-100 outline-none focus:border-rose-300 transition-all text-sm text-rose-950 bg-white/80 resize-none leading-relaxed shadow-inner font-medium"></textarea>
-        </div>
-
-        <div class="flex gap-3 w-full">
-            <button onclick="copiarTexto()" id="btn-copiar"
-                class="flex-1 bg-gradient-to-r from-rose-400 to-rose-500 text-white font-bold py-3 px-6 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md shadow-rose-200 flex items-center justify-center gap-2 text-sm">
-                <i data-lucide="copy" id="icono-copiar" class="w-4 h-4"></i>
-                <span id="texto-copiar">Copiar Texto</span>
-            </button>
-
-            <button onclick="borrarTexto()" 
-                class="bg-rose-50 text-rose-500 font-semibold p-3 rounded-2xl hover:bg-rose-100 active:scale-95 transition-all border border-rose-200 flex items-center justify-center"
-                title="Limpiar todo el cuadro">
-                <i data-lucide="trash-2" class="w-4 h-4"></i>
-            </button>
-        </div>
-
-        <div id="alerta-copiado" class="hidden text-center text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 py-2 rounded-xl animate-pulse">
-            ✨ ¡Copiado al portapapeles con éxito!
-        </div>
+        <div id="contenedor-bloques" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            </div>
 
     </main>
 
     <script>
-        const cajaTexto = document.getElementById('caja-texto');
-        const alertaCopiado = document.getElementById('alerta-copiado');
-        const btnCopiar = document.getElementById('btn-copiar');
-        const textoCopiar = document.getElementById('texto-copiar');
+        let bloques = [];
 
-        // 1. CARGAR EL TEXTO GUARDADO AL ENTRAR
+        // 1. CARGAR BLOQUES DE LOCALSTORAGE AL ENTRAR
         window.addEventListener('DOMContentLoaded', () => {
-            const textoGuardado = localStorage.getItem('jinni_personal_notes');
-            if (textoGuardado) {
-                cajaTexto.value = textoGuardado;
+            const guardados = localStorage.getItem('jinni_bloques_multiples');
+            if (guardados) {
+                bloques = JSON.parse(guardados);
+            } else {
+                // Bloque por defecto si está completamente vacío
+                bloques = [{ id: Date.now(), titulo: "Notas Generales 📌", texto: "" }];
             }
+            renderizarBloques();
+        });
+
+        // 2. RENDERIZAR TODOS LOS CUADROS EN PANTALLA
+        function renderizarBloques() {
+            const container = document.getElementById('contenedor-bloques');
+            
+            if (bloques.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center p-12 bg-white/40 border-2 border-dashed border-pink-200 rounded-[2rem] opacity-60">
+                        <p class="text-sm font-medium">No tienes ningún bloque creado aún. ¡Usa el buscador de arriba para añadir el primero! ✨</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = bloques.map(b => `
+                <div class="bg-white/80 backdrop-blur-sm p-4 rounded-[2rem] shadow-md border border-pink-100 flex flex-col gap-3 relative transition-all hover:shadow-lg">
+                    
+                    <div class="flex justify-between items-center px-1">
+                        <h3 class="text-sm font-bold text-[#ad1457] tracking-wide truncate max-w-[80%]">${b.titulo}</h3>
+                        <button onclick="eliminarBloque(${b.id})" class="text-pink-300 hover:text-red-500 transition-colors p-1 rounded-lg" title="Eliminar este bloque">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+
+                    <textarea oninput="actualizarTexto(${b.id}, this.value)" rows="6" placeholder="Escribe aquí..."
+                        class="w-full p-3 rounded-2xl border border-pink-100 outline-none focus:border-pink-300 transition-all text-xs text-stone-800 bg-white/90 resize-none leading-relaxed font-medium shadow-inner">${b.texto}</textarea>
+
+                    <button onclick="copiarTextoBloque(${b.id}, this)" 
+                        class="w-full bg-white hover:bg-pink-50 text-[#f06292] border-2 border-pink-200 font-bold py-2 px-4 rounded-xl transition-all flex items-center justify-center gap-1.5 text-xs shadow-sm active:scale-[0.98]">
+                        <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                        <span>Copiar Contenido</span>
+                    </button>
+                </div>
+            `).join('');
+
             lucide.createIcons();
-        });
+        }
 
-        // 2. GUARDAR AUTOMÁTICAMENTE MIENTRAS ESCRIBES
-        cajaTexto.addEventListener('input', () => {
-            localStorage.setItem('jinni_personal_notes', cajaTexto.value);
-        });
+        // 3. CREAR UN NUEVO CUADRO EN LA LISTA
+        function crearBloque() {
+            const inputTitulo = document.getElementById('nuevo-titulo');
+            const titulo = inputTitulo.value.trim();
+            
+            if (!titulo) return; // Evita crear bloques sin nombre
 
-        // 3. FUNCIÓN PARA COPIAR CON UN SOLO CLIC
-        function copiarTexto() {
-            const texto = cajaTexto.value;
-            if (!texto.trim()) return; // Si está vacío no hace nada
+            const nuevoBloque = {
+                id: Date.now(),
+                titulo: titulo,
+                texto: ""
+            };
 
-            navigator.clipboard.writeText(texto).then(() => {
-                // Mostrar alerta visual tierno de éxito
-                alertaCopiado.classList.remove('hidden');
+            bloques.unshift(nuevoBloque); // Lo añade al inicio de la lista
+            guardarEnStorage();
+            renderizarBloques();
+            
+            inputTitulo.value = ""; // Limpia el input
+        }
+
+        // 4. ACTUALIZAR EL TEXTO EN TIEMPO REAL MIENTRAS ESCRIBES
+        function actualizarTexto(id, valor) {
+            const bloque = bloques.find(b => b.id === id);
+            if (bloque) {
+                bloque.texto = valor;
+                guardarEnStorage(); // Guarda los cambios inmediatamente en segundo plano
+            }
+        }
+
+        // 5. COPIAR TEXTO ESPECÍFICO DE UN BLOQUE
+        function copiarTextoBloque(id, boton) {
+            const bloque = bloques.find(b => b.id === id);
+            if (!bloque || !bloque.texto.trim()) return;
+
+            navigator.clipboard.writeText(bloque.texto).then(() => {
+                const icono = boton.querySelector('i');
+                const textoSpan = boton.querySelector('span');
+
+                // Cambio visual aesthetic de éxito (Verde tierno)
+                boton.classList.remove('text-[#f06292]', 'border-pink-200', 'bg-white', 'hover:bg-pink-50');
+                boton.classList.add('text-emerald-600', 'border-emerald-200', 'bg-emerald-50');
+                textoSpan.innerText = "¡Copiado!";
                 
-                // Cambiar el diseño del botón temporalmente
-                btnCopiar.classList.remove('from-rose-400', 'to-rose-500');
-                btnCopiar.classList.add('from-emerald-400', 'to-emerald-500');
-                textoCopiar.innerText = "¡Copiado!";
-                
-                // Regresar todo a la normalidad en 2 segundos
                 setTimeout(() => {
-                    alertaCopiado.classList.add('hidden');
-                    btnCopiar.classList.remove('from-emerald-400', 'to-emerald-500');
-                    btnCopiar.classList.add('from-rose-400', 'to-rose-500');
-                    textoCopiar.innerText = "Copiar Texto";
-                }, 2000);
-            }).catch(err => {
-                console.error('Error al copiar: ', err);
+                    boton.classList.remove('text-emerald-600', 'border-emerald-200', 'bg-emerald-50');
+                    boton.classList.add('text-[#f06292]', 'border-pink-200', 'bg-white', 'hover:bg-pink-50');
+                    textoSpan.innerText = "Copiar Contenido";
+                }, 1500);
             });
         }
 
-        // 4. FUNCIÓN PARA LIMPIAR TODO
-        function borrarTexto() {
-            if (cajaTexto.value.trim() !== "") {
-                if (confirm("¿Segura de que quieres vaciar el cuadro?")) {
-                    cajaTexto.value = "";
-                    localStorage.removeItem('jinni_personal_notes');
-                }
+        // 6. ELIMINAR UN BLOQUE COMPLETO
+        function eliminarBloque(id) {
+            if (confirm("¿Estás segura de que quieres borrar este cuadro completo?")) {
+                bloques = bloques.filter(b => b.id !== id);
+                guardarEnStorage();
+                renderizarBloques();
             }
+        }
+
+        // 7. GUARDAR EN LOCALSTORAGE
+        function guardarEnStorage() {
+            localStorage.setItem('jinni_bloques_multiples', JSON.stringify(bloques));
         }
     </script>
 </body>
