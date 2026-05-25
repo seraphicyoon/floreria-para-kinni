@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Espacio Personal 🫧</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Quicksand', sans-serif; 
+            background: linear-gradient(180deg, #fff1f2 0%, #ffe4e6 100%);
+            min-height: 100vh;
+        }
+        /* Estilo lindo para el scroll del cuadro de texto */
+        textarea::-webkit-scrollbar { width: 6px; }
+        textarea::-webkit-scrollbar-thumb { background: #fda4af; border-radius: 10px; }
+    </style>
+</head>
+<body class="flex flex-col items-center p-6 text-[#9f1239]">
+
+    <div class="w-full max-w-xl flex justify-start mb-4">
+        <a href="index.html" class="flex items-center gap-1.5 text-xs font-bold opacity-60 hover:opacity-100 transition-all bg-white/50 px-3 py-1.5 rounded-full border border-rose-200">
+            <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Volver al Jardín
+        </a>
+    </div>
+
+    <main class="w-full max-w-xl bg-white/70 backdrop-blur-md p-6 rounded-[2.5rem] shadow-xl border border-rose-200/60 flex flex-col gap-4">
+        
+        <header class="text-center mb-2">
+            <div class="flex items-center justify-center gap-2 mb-1">
+                <span class="text-2xl">🫧</span>
+                <h1 class="text-2xl font-bold text-[#9f1239]">Bloc de Notas & Copiado</h1>
+                <span class="text-2xl">📝</span>
+            </div>
+            <p class="text-[11px] opacity-60 font-medium">Tu texto se guarda automáticamente en este navegador</p>
+        </header>
+
+        <div class="relative w-full">
+            <textarea id="caja-texto" rows="10" placeholder="Escribe o pega aquí lo que necesites tener a la mano, Jinni..."
+                class="w-full p-4 rounded-3xl border-2 border-rose-100 outline-none focus:border-rose-300 transition-all text-sm text-rose-950 bg-white/80 resize-none leading-relaxed shadow-inner font-medium"></textarea>
+        </div>
+
+        <div class="flex gap-3 w-full">
+            <button onclick="copiarTexto()" id="btn-copiar"
+                class="flex-1 bg-gradient-to-r from-rose-400 to-rose-500 text-white font-bold py-3 px-6 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md shadow-rose-200 flex items-center justify-center gap-2 text-sm">
+                <i data-lucide="copy" id="icono-copiar" class="w-4 h-4"></i>
+                <span id="texto-copiar">Copiar Texto</span>
+            </button>
+
+            <button onclick="borrarTexto()" 
+                class="bg-rose-50 text-rose-500 font-semibold p-3 rounded-2xl hover:bg-rose-100 active:scale-95 transition-all border border-rose-200 flex items-center justify-center"
+                title="Limpiar todo el cuadro">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+        </div>
+
+        <div id="alerta-copiado" class="hidden text-center text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 py-2 rounded-xl animate-pulse">
+            ✨ ¡Copiado al portapapeles con éxito!
+        </div>
+
+    </main>
+
+    <script>
+        const cajaTexto = document.getElementById('caja-texto');
+        const alertaCopiado = document.getElementById('alerta-copiado');
+        const btnCopiar = document.getElementById('btn-copiar');
+        const textoCopiar = document.getElementById('texto-copiar');
+
+        // 1. CARGAR EL TEXTO GUARDADO AL ENTRAR
+        window.addEventListener('DOMContentLoaded', () => {
+            const textoGuardado = localStorage.getItem('jinni_personal_notes');
+            if (textoGuardado) {
+                cajaTexto.value = textoGuardado;
+            }
+            lucide.createIcons();
+        });
+
+        // 2. GUARDAR AUTOMÁTICAMENTE MIENTRAS ESCRIBES
+        cajaTexto.addEventListener('input', () => {
+            localStorage.setItem('jinni_personal_notes', cajaTexto.value);
+        });
+
+        // 3. FUNCIÓN PARA COPIAR CON UN SOLO CLIC
+        function copiarTexto() {
+            const texto = cajaTexto.value;
+            if (!texto.trim()) return; // Si está vacío no hace nada
+
+            navigator.clipboard.writeText(texto).then(() => {
+                // Mostrar alerta visual tierno de éxito
+                alertaCopiado.classList.remove('hidden');
+                
+                // Cambiar el diseño del botón temporalmente
+                btnCopiar.classList.remove('from-rose-400', 'to-rose-500');
+                btnCopiar.classList.add('from-emerald-400', 'to-emerald-500');
+                textoCopiar.innerText = "¡Copiado!";
+                
+                // Regresar todo a la normalidad en 2 segundos
+                setTimeout(() => {
+                    alertaCopiado.classList.add('hidden');
+                    btnCopiar.classList.remove('from-emerald-400', 'to-emerald-500');
+                    btnCopiar.classList.add('from-rose-400', 'to-rose-500');
+                    textoCopiar.innerText = "Copiar Texto";
+                }, 2000);
+            }).catch(err => {
+                console.error('Error al copiar: ', err);
+            });
+        }
+
+        // 4. FUNCIÓN PARA LIMPIAR TODO
+        function borrarTexto() {
+            if (cajaTexto.value.trim() !== "") {
+                if (confirm("¿Segura de que quieres vaciar el cuadro?")) {
+                    cajaTexto.value = "";
+                    localStorage.removeItem('jinni_personal_notes');
+                }
+            }
+        }
+    </script>
+</body>
+</html>
